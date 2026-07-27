@@ -1,0 +1,31 @@
+# Installer-generated source archives and temporary acquisition paths
+/v4.5.2.tar.gz
+/WPS-4.5.tar.gz
+/v[0-9]*.tar.gz
+/WRF-*.tar.gz
+/WPS-*.tar.gz
+/*.download.*
+/.wrf-wps-download-*
+/.wrf-wps-extract-*
+
+# Source/build trees and large optional datasets
+/WRF/
+/WPS/
+/WPS_GEOG/
+
+# Installer-generated compatibility prefix, verification data, and records
+/netcdf-system/
+/verification/
+/install_one_click.log
+/source_provenance_one_click.txt
+/wrf_env.sh
+/wrf_env_one_click.sh
+/.install_wrf_wps_452.lock
+
+# Local editor and operating-system files
+/.vscode/
+/.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~

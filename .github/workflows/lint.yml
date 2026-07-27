@@ -1,0 +1,55 @@
+name: Shell checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck when needed
+        run: |
+          if ! command -v shellcheck >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y shellcheck
+          fi
+
+      - name: Check Bash syntax
+        run: bash -n install_wrf_wps_452.sh
+
+      - name: Check whitespace
+        run: |
+          git diff --check
+          git log --check -1
+
+      - name: Run ShellCheck
+        run: shellcheck --severity=error install_wrf_wps_452.sh
+
+      - name: Check help path
+        run: |
+          bash install_wrf_wps_452.sh --help > help.txt
+          grep -Fq -- "--source-method METHOD" help.txt
+          grep -Fq -- "--offline" help.txt
+
+      - name: Check source manifest
+        run: |
+          test "$(awk '$2 == "v4.5.2.tar.gz" {count++} END {print count+0}' checksums.sha256)" -eq 1
+          test "$(awk '$2 == "WPS-4.5.tar.gz" {count++} END {print count+0}' checksums.sha256)" -eq 1
+          awk '
+            /^#/ || NF == 0 {next}
+            NF != 2 {exit 1}
+            $1 !~ /^[0-9a-f]{64}$/ {exit 1}
+            $2 != "v4.5.2.tar.gz" && $2 != "WPS-4.5.tar.gz" {exit 1}
+            {count++}
+            END {if (count != 2) exit 1}
+          ' checksums.sha256
