@@ -1,4 +1,7 @@
-# 原生 Ubuntu 安装与验证记录
+# WRF 4.5.2 / WPS 4.5 原生 Ubuntu 安装与验证记录
+
+> 本文记录 4.5.2 的历史实测。当前默认版本及安装入口见 [README](../README.md)，
+> 新版实测见 [4.8.0 验证记录](WRF_4.8_VALIDATION.zh-CN.md)。
 
 验证日期：2026-09-17 至 2026-09-18（Asia/Shanghai）
 

@@ -9,6 +9,7 @@
 /.wrf-wps-extract-*
 
 # Source/build trees and large optional datasets
+/installations/
 /WRF/
 /WPS/
 /WPS_GEOG/

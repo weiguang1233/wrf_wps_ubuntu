@@ -1,19 +1,21 @@
-# WRF 4.5.2 + WPS 4.5 一键安装器
+# WRF 4.8.0 + WPS 4.7.0 一键安装器
 
 这是一个面向原生 Ubuntu x86_64 的非官方安装脚本。它安装依赖、获取并校验固定
 版本源码、编译 WRF 与 WPS，并运行工具链检查、WPS 启动检查和一个小型
-WRF MPI 数值示例。
+WRF MPI 数值示例。通过 `--wrf-version` 选择清单内的固定版本，
+不同版本安装在独立目录中。
 
-默认结果会写在仓库目录中：
+默认组合为 WRF 4.8.0 + WPS 4.7.0。结果写入仓库下的版本目录：
 
 ```text
-WRF/
-WPS/
-netcdf-system/
-verification/
-wrf_env.sh
-install_one_click.log
-source_provenance_one_click.txt
+installations/wrf-4.8.0-wps-4.7.0/
+    WRF/
+    WPS/
+    netcdf-system/
+    verification/
+    wrf_env.sh
+    install_one_click.log
+    source_provenance_one_click.txt
 ```
 
 ## 快速开始
@@ -24,20 +26,20 @@ source_provenance_one_click.txt
 cd ~
 git clone https://github.com/weiguang1233/wrf_wps_ubuntu.git
 cd wrf_wps_ubuntu
-bash install_wrf_wps_452.sh
+bash install_wrf_wps.sh
 ```
 
 脚本需要普通用户运行。缺少 Ubuntu 软件包时，它会单独调用 `sudo` 并
 可能询问密码：
 
 ```text
-不要运行：sudo bash install_wrf_wps_452.sh
+不要运行：sudo bash install_wrf_wps.sh
 ```
 
 安装成功后（若激活了 Conda，先退出 Conda 环境，避免运行时混用 MPI/动态库）：
 
 ```bash
-source ./wrf_env.sh
+source ./installations/wrf-4.8.0-wps-4.7.0/wrf_env.sh
 command -v wrf.exe geogrid.exe ungrib.exe metgrid.exe
 ```
 
@@ -46,19 +48,22 @@ command -v wrf.exe geogrid.exe ungrib.exe metgrid.exe
 
 ## 支持范围
 
-- WRF `4.5.2`
-- WPS `4.5`
+- 默认 WRF `4.8.0` + WPS `4.7.0`
+- 兼容 WRF `4.5.2` + WPS `4.5`，通过版本选项选择
 - GNU `gcc/gfortran`
 - OpenMPI，WRF 使用 `dmpar`
 - WPS 使用 GNU serial，并启用内置 JasPer、libpng、zlib 的 GRIB2 支持
 - 目标平台为原生 `x86_64` Ubuntu，Intel 与 AMD 使用相同的 GNU 配置
 - 不需要 Intel oneAPI、MKL 或 AMD 专用编译器，不按 CPU 厂商切换工具链
 
-保留 WRF/WPS 固定版本和原有构建方式。Ubuntu 22.04、24.04、26.04
-均作为原生安装目标，但只有实际执行过的环境才记为已验证；具体结果见
-[原生 Ubuntu 验证记录](docs/NATIVE_UBUNTU_VALIDATION.zh-CN.md)。
+保留上游 GNU make 构建方式，版本清单同时固定 WRF/WPS 组合与精确 Git 提交。Ubuntu 22.04、24.04、26.04
+均作为原生安装目标，但只有实际执行过的环境才记为已验证。
 本轮已在原生 Ubuntu 26.04、GCC/GFortran 15.2、OpenMPI 5.0.10 上完成
-WRF/WPS 编译、WPS 启动验证和 WRF 双进程 60 分钟理想化积分。
+默认 WRF 4.8.0 / WPS 4.7.0 编译、WPS 启动验证和 WRF 双进程、60 分钟模式时间
+的理想化积分；默认入口离线复用和版本回归检查也已通过。
+详见 [4.8.0 验证记录](docs/WRF_4.8_VALIDATION.zh-CN.md)。
+旧版完整实测见 [4.5.2 验证记录](docs/NATIVE_UBUNTU_VALIDATION.zh-CN.md)，
+本轮另确认旧兼容入口仍能复用原安装。
 AMD 硬件及其他 Ubuntu 版本尚未做完整实测。
 WSL 不再作为安装目标，脚本检测到 WSL 后会停止。
 旧 WSL2 / Ubuntu 20.04 验证记录保留在历史文档中，不代表本轮原生验证。
@@ -92,11 +97,43 @@ WSL 不再作为安装目标，脚本检测到 WSL 后会停止。
 历史 WSL 安装与排错记录（仅供参考）见
 [docs/INSTALLATION_NOTES.zh-CN.md](docs/INSTALLATION_NOTES.zh-CN.md)。
 
+## 选择 WRF 版本
+
+```bash
+bash install_wrf_wps.sh --list-versions
+bash install_wrf_wps.sh --wrf-version 4.8.0
+bash install_wrf_wps.sh --wrf-version 4.5.2
+```
+
+`4.8`、`4.8.0`、`v4.8.0` 均选择 4.8.0。当前支持的固定组合：
+
+| WRF | WPS | 默认安装目录 |
+|---|---|---|
+| 4.8.0 | 4.7.0 | `installations/wrf-4.8.0-wps-4.7.0` |
+| 4.5.2 | 4.5 | `installations/wrf-4.5.2-wps-4.5` |
+
+WRF 4.8.0 的 [官方发布说明](https://github.com/wrf-model/WRF/releases/tag/v4.8.0)
+要求新功能配合 WPS 4.7.0 或更高版本，因此
+安装器自动选择 WPS 4.7.0，不按 WRF 版本号猜测 WPS 标签。
+未知版本在安装前停止，并提示查看版本清单。
+
+原有 `install_wrf_wps_452.sh` 保留为兼容入口，仍选择 4.5.2 + 4.5 并使用
+仓库根目录，可复核本项目以前的安装；升级请使用新的通用入口。
+切换版本不会自动覆盖旧构建树，`--resume` 也不允许跨版本复用。
+
 ## 常用选项
 
 ```text
+--wrf-version VERSION
+    选择 versions.tsv 中支持的 WRF 版本，默认 4.8.0。
+    配套 WPS 版本自动选择。
+
+--list-versions
+    列出支持的固定 WRF/WPS 组合后退出，不安装或联网。
+
 --base DIR
-    把源码、构建结果和日志写到指定目录。目录必须已经存在。
+    把源码、构建结果和日志写到指定目录。显式指定时目录必须已经存在。
+    默认创建 installations/wrf-<版本>-wps-<版本>。
 
 --jobs N
     WRF 并行编译任务数。默认取 min(nproc, 8)，再按启动时每 3 GiB
@@ -125,28 +162,29 @@ WSL 不再作为安装目标，脚本检测到 WSL 后会停止。
 查看内置帮助：
 
 ```bash
-bash install_wrf_wps_452.sh --help
+bash install_wrf_wps.sh --help
 ```
 
 ### 依赖已经安装
 
 ```bash
-bash install_wrf_wps_452.sh --skip-apt
+bash install_wrf_wps.sh --skip-apt
 ```
 
 ### 完全离线安装
 
-先把下面两个文件放在仓库根目录：
+先创建默认版本目录，把下面两个文件放入
+`installations/wrf-4.8.0-wps-4.7.0/`（使用 `--base` 时放入指定目录）：
 
 ```text
-v4.5.2.tar.gz
-WPS-4.5.tar.gz
+v4.8.0.tar.gz
+WPS-4.7.0.tar.gz
 ```
 
 然后运行：
 
 ```bash
-bash install_wrf_wps_452.sh --offline
+bash install_wrf_wps.sh --offline
 ```
 
 脚本仍会严格核对 [checksums.sha256](checksums.sha256)，不会接受名称相同
@@ -155,21 +193,35 @@ bash install_wrf_wps_452.sh --offline
 ### 使用 Git 固定提交
 
 ```bash
-bash install_wrf_wps_452.sh --source-method git
+bash install_wrf_wps.sh --source-method git
 ```
 
-当前固定提交：
+默认组合的固定提交（其他组合见 [versions.tsv](versions.tsv)）：
 
 ```text
-WRF v4.5.2  a8eb846859cb39d0acfd1d3297ea9992ce66424a
-WPS v4.5    5a2ae63988e632405a4504cfb143ce7f0230a7a0
+WRF v4.8.0  06d4240ae989cc3e50af412bb472df3d9048783c
+WPS v4.7.0  5feccecd63384381b6942371c7a837f66e4ccb84
 ```
 
-WRF 的默认 URL 是官方发布页提供的自定义 `v4.5.2.tar.gz`，不是 GitHub
-自动生成的 “Source code” 压缩包；这样才能包含该版本所需的 NoahMP
-子模块内容。WPS 标签压缩包由 GitHub 动态生成，仓库固定的是本项目
+WRF 的默认 URL 是官方发布页提供的自定义 `v4.8.0.tar.gz`，不是 GitHub
+自动生成的 “Source code” 压缩包；这样才能包含 NoahMP、TEMPO、MYNN、GFL 等必需子模块。
+4.8.0 自动生成的 Source code 归档被上游特意设为空包，不能替代发布资产。WPS 标签压缩包由 GitHub 动态生成，仓库固定的是本项目
 验证过的字节级 SHA-256。若上游以后重新生成出不同字节，脚本会安全
 停止；可检查差异后使用固定提交的 `git` 方式。
+
+## 后续增加支持版本
+
+维护者添加版本时同时更新两个文本清单：
+
+1. `versions.tsv` 添加 WRF 版本、对应 WPS 版本、两个官方标签的精确提交。
+2. `checksums.sha256` 为尚未列出的官方 WRF 完整发布归档和 WPS 标签归档添加 SHA-256；
+   已有的同一 WPS 归档复用原校验项。
+3. 执行静态检查，并在新安装目录实际构建、启动验证和运行理想化测试，
+   将实测结果写入文档。
+
+没有校验和、重复版本或格式不正确的选择项会停止。清单包含某版本仅说明
+其来源固定；是否完成本机实测以验证记录为准。
+GNU 配置选项从该版本上游菜单动态识别，不依赖固定的菜单编号。
 
 ## GNU 工具链兼容
 
@@ -231,9 +283,10 @@ Fortran 兼容选项仍由上游配置脚本按 GFortran 版本生成。
 
 ## 安装后检查与排错
 
-检查本次结果：
+进入所选版本的安装目录后检查本次结果（默认目录如下）：
 
 ```bash
+cd installations/wrf-4.8.0-wps-4.7.0
 grep INSTALLATION_SUCCESS install_one_click.log
 cat WRF/compile.status WPS/compile.status
 cat WPS/verification_one_click.status verification/wrf_em_quarter_ss_smoke.status
@@ -248,23 +301,25 @@ cat WPS/verification_one_click.status verification/wrf_em_quarter_ss_smoke.statu
 缺少可执行文件或日志中出现致命链接错误仍会判为失败。
 内存不足、编译器被系统杀掉时，改用 `--jobs 1`，关闭其他耗内存程序后重试。
 
-离线复核已有完整安装（不重复数值积分）：
+回到仓库根目录，离线复核已有完整安装（不重复数值积分）：
 
 ```bash
-bash install_wrf_wps_452.sh --offline --skip-apt --skip-smoke
+bash install_wrf_wps.sh --offline --skip-apt --skip-smoke
 ```
 
-原生 Ubuntu 验证详情、兼容修正和已知测试边界见
-[验证记录](docs/NATIVE_UBUNTU_VALIDATION.zh-CN.md)。
+新版本实测见 [4.8.0 验证记录](docs/WRF_4.8_VALIDATION.zh-CN.md)，
+旧版安装详情见 [4.5.2 验证记录](docs/NATIVE_UBUNTU_VALIDATION.zh-CN.md)。
 
 ## 静态检查
 
 每次推送和拉取请求会在 Ubuntu 22.04 / 24.04 上运行轻量 CI：
 
 ```bash
-bash -n install_wrf_wps_452.sh
-shellcheck --severity=error install_wrf_wps_452.sh
-bash install_wrf_wps_452.sh --help
+for script in install_wrf_wps.sh install_wrf_wps_452.sh tests/test_versions.sh; do
+  bash -n "$script"
+done
+shellcheck --severity=error install_wrf_wps.sh install_wrf_wps_452.sh tests/test_versions.sh
+bash tests/test_versions.sh
 ```
 
 CI 不下载源码，也不执行耗时的完整编译。完整构建是否成功仍取决于目标
@@ -272,6 +327,8 @@ CI 不下载源码，也不执行耗时的完整编译。完整构建是否成�
 
 ## 上游链接
 
+- [WRF 4.8.0 官方发布说明](https://github.com/wrf-model/WRF/releases/tag/v4.8.0)
+- [WPS 4.7.0 官方发布说明](https://github.com/wrf-model/WPS/releases/tag/v4.7.0)
 - [WRF 官方 Releases](https://github.com/wrf-model/WRF/releases)
 - [WPS 官方 Releases](https://github.com/wrf-model/WPS/releases)
 - [WRF 用户指南](https://www2.mmm.ucar.edu/wrf/users/docs/user_guide_v4/contents.html)

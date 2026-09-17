@@ -28,7 +28,10 @@ jobs:
           fi
 
       - name: Check Bash syntax
-        run: bash -n install_wrf_wps_452.sh
+        run: |
+          for script in install_wrf_wps.sh install_wrf_wps_452.sh tests/test_versions.sh; do
+            bash -n "$script"
+          done
 
       - name: Check whitespace
         run: |
@@ -36,23 +39,13 @@ jobs:
           git log --check -1
 
       - name: Run ShellCheck
-        run: shellcheck --severity=error install_wrf_wps_452.sh
+        run: shellcheck --severity=error install_wrf_wps.sh install_wrf_wps_452.sh tests/test_versions.sh
 
       - name: Check help path
         run: |
-          bash install_wrf_wps_452.sh --help > help.txt
+          bash install_wrf_wps.sh --help > help.txt
           grep -Fq -- "--source-method METHOD" help.txt
           grep -Fq -- "--offline" help.txt
 
-      - name: Check source manifest
-        run: |
-          test "$(awk '$2 == "v4.5.2.tar.gz" {count++} END {print count+0}' checksums.sha256)" -eq 1
-          test "$(awk '$2 == "WPS-4.5.tar.gz" {count++} END {print count+0}' checksums.sha256)" -eq 1
-          awk '
-            /^#/ || NF == 0 {next}
-            NF != 2 {exit 1}
-            $1 !~ /^[0-9a-f]{64}$/ {exit 1}
-            $2 != "v4.5.2.tar.gz" && $2 != "WPS-4.5.tar.gz" {exit 1}
-            {count++}
-            END {if (count != 2) exit 1}
-          ' checksums.sha256
+      - name: Check version selection and source manifests
+        run: bash tests/test_versions.sh
