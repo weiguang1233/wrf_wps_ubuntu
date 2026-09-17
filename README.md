@@ -1,6 +1,6 @@
 # WRF 4.5.2 + WPS 4.5 一键安装器
 
-这是一个面向 Ubuntu/WSL 的非官方安装脚本。它安装依赖、获取并校验固定
+这是一个面向原生 Ubuntu x86_64 的非官方安装脚本。它安装依赖、获取并校验固定
 版本源码、编译 WRF 与 WPS，并运行工具链检查、WPS 启动检查和一个小型
 WRF MPI 数值示例。
 
@@ -18,13 +18,12 @@ source_provenance_one_click.txt
 
 ## 快速开始
 
-先把仓库克隆到 WSL 的 Linux 主目录，而不是 `/mnt/c`、`/mnt/d` 等
-Windows 挂载盘：
+把仓库克隆到最终安装位置，使用支持 Linux 权限和符号链接的本地文件系统：
 
 ```bash
 cd ~
 git clone https://github.com/weiguang1233/wrf_wps_ubuntu.git
-cd wrf-wps-installer
+cd wrf_wps_ubuntu
 bash install_wrf_wps_452.sh
 ```
 
@@ -35,14 +34,14 @@ bash install_wrf_wps_452.sh
 不要运行：sudo bash install_wrf_wps_452.sh
 ```
 
-安装成功后：
+安装成功后（若激活了 Conda，先退出 Conda 环境，避免运行时混用 MPI/动态库）：
 
 ```bash
 source ./wrf_env.sh
-wrf.exe
+command -v wrf.exe geogrid.exe ungrib.exe metgrid.exe
 ```
 
-最后一行只是展示程序已进入环境；实际 WRF 个例仍需要相应的
+最后一行检查程序路径；实际 WRF 个例仍需要相应的
 `namelist.input`、初始场和边界场。
 
 ## 支持范围
@@ -52,23 +51,17 @@ wrf.exe
 - GNU `gcc/gfortran`
 - OpenMPI，WRF 使用 `dmpar`
 - WPS 使用 GNU serial，并启用内置 JasPer、libpng、zlib 的 GRIB2 支持
-- 目标平台为 `x86_64` Ubuntu/WSL2
+- 目标平台为原生 `x86_64` Ubuntu，Intel 与 AMD 使用相同的 GNU 配置
+- 不需要 Intel oneAPI、MKL 或 AMD 专用编译器，不按 CPU 厂商切换工具链
 
-核心构建、链接检查和 `em_quarter_ss` 两进程数值测试已在以下环境实际
-通过：
-
-```text
-WSL2
-Ubuntu 20.04.4 LTS
-GCC/GFortran 9.4.0
-OpenMPI 4.0.3
-NetCDF-C 4.7.3
-NetCDF-Fortran 4.5.2
-```
-
-这是历史验证环境，不是给新安装选择操作系统版本的推荐。原生 Ubuntu
-和其他 Ubuntu 版本会显示“未经完整验证”警告并继续尝试。不同发行版、
-CPU 架构、MPI 实现和第三方编译器不在当前脚本的已验证范围内。
+保留 WRF/WPS 固定版本和原有构建方式。Ubuntu 22.04、24.04、26.04
+均作为原生安装目标，但只有实际执行过的环境才记为已验证；具体结果见
+[原生 Ubuntu 验证记录](docs/NATIVE_UBUNTU_VALIDATION.zh-CN.md)。
+本轮已在原生 Ubuntu 26.04、GCC/GFortran 15.2、OpenMPI 5.0.10 上完成
+WRF/WPS 编译、WPS 启动验证和 WRF 双进程 60 分钟理想化积分。
+AMD 硬件及其他 Ubuntu 版本尚未做完整实测。
+WSL 不再作为安装目标，脚本检测到 WSL 后会停止。
+旧 WSL2 / Ubuntu 20.04 验证记录保留在历史文档中，不代表本轮原生验证。
 
 ## 运行前条件
 
@@ -76,17 +69,16 @@ CPU 架构、MPI 实现和第三方编译器不在当前脚本的已验证范围
 - 能使用 `sudo apt-get` 安装缺失依赖，或已经自行装好全部依赖；
 - 默认方式需要访问 GitHub；
 - 路径不能含空格；
-- 必须放在 WSL Linux 文件系统中，例如
-  `/home/username/wrf-wps-installer`。
+- 使用本地 Linux 文件系统（例如 ext4），路径如 `/home/username/wrf_wps_ubuntu`。
 
-首次编译会占用较长时间，具体取决于 CPU、WSL 资源限制和网络速度。
+首次编译会占用较长时间，具体取决于 CPU、可用内存和网络速度。
 
-不要把构建目录放在 `/mnt/c`、`/mnt/d` 等 DrvFS 路径。除了性能明显
-较差，Linux 符号链接、权限和时间戳语义也更容易影响旧式构建系统。
+内存较少或同时运行其他程序时，建议使用 `--jobs 2`，必要时降为 `--jobs 1`。
+原生 Ubuntu 的 `/mnt` 可用于正常 Linux 挂载点，脚本不再按盘符路径拒绝。
 
 ## 脚本做什么
 
-1. 检测 Ubuntu 版本、WSL、CPU 架构、CPU 数、内存和磁盘空间；
+1. 检测原生 Ubuntu 环境、CPU 架构、CPU 数、内存和磁盘空间；
 2. 清除 Conda 和外部编译器/库路径变量对构建的污染；
 3. 安装并核对 GNU、OpenMPI、NetCDF-C/Fortran 等依赖；
 4. 下载或克隆固定的 WRF/WPS 源码，并验证校验和或 Git 提交；
@@ -97,7 +89,7 @@ CPU 架构、MPI 实现和第三方编译器不在当前脚本的已验证范围
 9. 检查 WPS 程序能启动并到达预期输入检查；
 10. 默认运行 WRF `em_quarter_ss` 的两进程、60 分钟积分测试。
 
-完整的首次安装与排错记录见
+历史 WSL 安装与排错记录（仅供参考）见
 [docs/INSTALLATION_NOTES.zh-CN.md](docs/INSTALLATION_NOTES.zh-CN.md)。
 
 ## 常用选项
@@ -107,7 +99,9 @@ CPU 架构、MPI 实现和第三方编译器不在当前脚本的已验证范围
     把源码、构建结果和日志写到指定目录。目录必须已经存在。
 
 --jobs N
-    WRF 并行编译任务数。默认使用 min(nproc, 8)。
+    WRF 并行编译任务数。默认取 min(nproc, 8)，再按启动时每 3 GiB
+    可用内存限制一个任务（至少 1）；显式指定本选项可覆盖。
+    此估算不是内存保证，旧系统若无 MemAvailable 则使用 CPU 上限。
 
 --skip-apt
     不安装 Ubuntu 软件包；发现缺包时立即停止。
@@ -177,6 +171,21 @@ WRF 的默认 URL 是官方发布页提供的自定义 `v4.5.2.tar.gz`，不是 
 验证过的字节级 SHA-256。若上游以后重新生成出不同字节，脚本会安全
 停止；可检查差异后使用固定提交的 `git` 方式。
 
+## GNU 工具链兼容
+
+脚本使用 Ubuntu 系统包提供的 GCC/GFortran、OpenMPI 和 NetCDF，清除
+Conda 库路径及 `OMPI_CC/OMPI_FC` 等编译器覆盖变量。支持 MPI 包使用
+`gfortran-15` 这类带版本后缀的 GNU 编译器名。
+
+WRF 4.5.2 的旧 C 函数声明不兼容 GCC 15 默认的 C23，因此安装器在生成的
+WRF/WPS GNU 配置中显式使用 `-std=gnu17`，并通过
+`-Wno-error=incompatible-pointer-types` 兼容旧通信代码（GCC 14 起将该诊断
+提升为错误）。这不涉及 Intel/AMD 专用指令，也不改动上游源码。
+WPS 还使用 `-Wno-error=implicit-int` 兼容旧式 C 返回类型声明。
+WPS 的 C 选项放入 `CFLAGS`，保持 `SCC=gcc`，以适配上游子 make 的参数传递；
+NetCDF 路径明确写入生成配置，后续直接运行 WPS `./compile` 也能找到系统库。
+Fortran 兼容选项仍由上游配置脚本按 GFortran 版本生成。
+
 ## 已有目录与恢复策略
 
 安装器不会静默覆盖 `WRF/` 或 `WPS/`：
@@ -220,9 +229,37 @@ WRF 的默认 URL 是官方发布页提供的自定义 `v4.5.2.tar.gz`，不是 
   本仓库的安装脚本与文档使用 MIT License。
 - 科研使用 WRF/WPS 时，请同时遵守上游的许可、注册和引用要求。
 
+## 安装后检查与排错
+
+检查本次结果：
+
+```bash
+grep INSTALLATION_SUCCESS install_one_click.log
+cat WRF/compile.status WPS/compile.status
+cat WPS/verification_one_click.status verification/wrf_em_quarter_ss_smoke.status
+```
+
+缺少依赖时，交互终端中的默认运行会调用 `sudo apt-get`；自动化环境若无法
+输入 sudo 密码，脚本会列出缺失包及安装命令并停止。先在终端安装这些包，
+再使用 `--skip-apt` 重新运行。
+
+编译失败时先检查 `WRF/compile.log`、`WPS/compile.log` 或
+`WPS/grib2-build.log`，确认原因后使用 `--resume`。即使上游包装脚本返回 0，
+缺少可执行文件或日志中出现致命链接错误仍会判为失败。
+内存不足、编译器被系统杀掉时，改用 `--jobs 1`，关闭其他耗内存程序后重试。
+
+离线复核已有完整安装（不重复数值积分）：
+
+```bash
+bash install_wrf_wps_452.sh --offline --skip-apt --skip-smoke
+```
+
+原生 Ubuntu 验证详情、兼容修正和已知测试边界见
+[验证记录](docs/NATIVE_UBUNTU_VALIDATION.zh-CN.md)。
+
 ## 静态检查
 
-每次推送和拉取请求会运行轻量 CI：
+每次推送和拉取请求会在 Ubuntu 22.04 / 24.04 上运行轻量 CI：
 
 ```bash
 bash -n install_wrf_wps_452.sh
@@ -231,7 +268,7 @@ bash install_wrf_wps_452.sh --help
 ```
 
 CI 不下载源码，也不执行耗时的完整编译。完整构建是否成功仍取决于目标
-Ubuntu/WSL 环境，应以脚本生成的日志和验证状态为准。
+原生 Ubuntu 环境，应以脚本生成的日志和验证状态为准。
 
 ## 上游链接
 

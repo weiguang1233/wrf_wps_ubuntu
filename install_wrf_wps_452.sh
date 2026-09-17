@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# One-click WRF 4.5.2 + WPS 4.5 installer for Ubuntu/WSL.
+# One-click WRF 4.5.2 + WPS 4.5 installer for native Ubuntu x86_64 (Intel or AMD).
 #
 # Source archives may be supplied in BASE_DIR:
 #   v4.5.2.tar.gz
@@ -28,7 +28,8 @@ Usage:
 Options:
   --base DIR       Installation/source-archive directory.
                    Default: directory containing this script.
-  --jobs N         Parallel WRF build jobs. Default: min(nproc, 8).
+  --jobs N         Parallel WRF build jobs. Default: min(nproc, 8), further
+                   limited to one job per 3 GiB available RAM (at least 1).
   --skip-apt       Do not install Ubuntu packages; fail if any are missing.
   --offline        Never access the network. Missing Ubuntu packages cause
                    a stop, and any needed archives must already be in
@@ -46,7 +47,7 @@ Options:
 
 Recommended:
   git clone https://github.com/weiguang1233/wrf_wps_ubuntu.git
-  cd wrf-wps-installer
+  cd wrf_wps_ubuntu
   bash install_wrf_wps_452.sh
 
 If dependencies and source archives are already available:
@@ -65,6 +66,16 @@ if (( detected_cpus > 8 )); then
   jobs=8
 else
   jobs="$detected_cpus"
+fi
+# Large WRF Fortran units can consume about 3 GiB per compiler process.
+# This is a conservative default, not a memory guarantee; --jobs overrides it.
+available_memory_kib="$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo 2>/dev/null || true)"
+if [[ "$available_memory_kib" =~ ^[0-9]+$ ]]; then
+  memory_jobs=$((available_memory_kib / (3 * 1024 * 1024)))
+  ((memory_jobs >= 1)) || memory_jobs=1
+  if ((jobs > memory_jobs)); then
+    jobs="$memory_jobs"
+  fi
 fi
 skip_apt=0
 skip_smoke=0
@@ -129,13 +140,6 @@ if [[ "$base_dir" =~ [[:space:]] ]]; then
   echo "ERROR: WRF/WPS build paths must not contain whitespace: $base_dir" >&2
   exit 2
 fi
-case "$base_dir" in
-  /mnt/[a-zA-Z]|/mnt/[a-zA-Z]/*)
-    echo "ERROR: do not build WRF/WPS on a Windows-mounted /mnt drive." >&2
-    echo "Clone or move this repository under the WSL Linux home directory." >&2
-    exit 2
-    ;;
-esac
 
 wrf_dir="$base_dir/WRF"
 wps_dir="$base_dir/WPS"
@@ -398,7 +402,7 @@ trap cleanup_temp EXIT
 exec 9>"$base_dir/.install_wrf_wps_452.lock"
 flock -n 9 || fail "another installer process is already using $base_dir"
 ((EUID != 0)) \
-  || fail "run this installer as a normal WSL user, not with sudo"
+  || fail "run this installer as a normal Ubuntu user, not with sudo"
 
 shopt -s nullglob
 stale_acquisition_paths=(
@@ -414,7 +418,7 @@ fi
 
 environment_override_vars=(
   CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_SHLVL
-  CC CXX FC F77 F90
+  CC CXX FC F77 F90 OMPI_CC OMPI_CXX OMPI_FC OMPI_F77 OMPI_F90
   CPPFLAGS CFLAGS CXXFLAGS FFLAGS FCFLAGS LDFLAGS
   LD_LIBRARY_PATH LIBRARY_PATH CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH
   PKG_CONFIG_PATH CMAKE_PREFIX_PATH
@@ -448,9 +452,8 @@ echo "============================================================"
 source /etc/os-release
 [[ "${ID:-}" == "ubuntu" ]] \
   || fail "this installer supports Ubuntu only (detected ID=${ID:-unknown})"
-if [[ "${VERSION_ID:-}" != "20.04" ]]; then
-  echo "WARNING: Ubuntu ${VERSION_ID:-unknown} is not in the fully tested platform set."
-  echo "The recorded successful installation used Ubuntu 20.04."
+if grep -qiE 'microsoft|wsl' /proc/sys/kernel/osrelease; then
+  fail "use native Ubuntu x86_64; WSL is outside this installer's target platform"
 fi
 
 if ((${#cleared_environment_vars[@]} > 0)); then
@@ -460,7 +463,7 @@ fi
 echo "SYSTEM: ${PRETTY_NAME:-unknown Ubuntu}"
 echo "KERNEL: $(uname -r)"
 echo "ARCH:   $(uname -m)"
-echo "WSL:    $(if grep -qi microsoft /proc/sys/kernel/osrelease; then echo yes; else echo no; fi)"
+echo "PLATFORM: native Ubuntu; GNU toolchain for Intel and AMD"
 echo "CPUS:   $(nproc)"
 if command -v free >/dev/null 2>&1; then
   free -h
@@ -471,7 +474,7 @@ df -h "$base_dir"
 [[ "$(uname -m)" == "x86_64" ]] \
   || fail "this tested installer currently supports x86_64 only"
 
-available_kib="$(df -Pk --output=avail "$base_dir" | tail -n 1 | tr -d '[:space:]')"
+available_kib="$(df -k --output=avail "$base_dir" | tail -n 1 | tr -d '[:space:]')"
 [[ "$available_kib" =~ ^[0-9]+$ ]] \
   || fail "could not determine available disk space for $base_dir"
 minimum_free_kib=$((10 * 1024 * 1024))
@@ -615,7 +618,13 @@ install_dependencies() {
 
   command -v sudo >/dev/null \
     || fail "sudo is required to install missing packages"
-  echo "sudo may ask for the WSL user password."
+  if [[ ! -t 0 ]] && ! sudo -n true 2>/dev/null; then
+    printf 'Install missing packages in a terminal: sudo apt-get install'
+    printf ' %q' "${missing[@]}"
+    echo
+    fail "package installation requires interactive sudo authentication"
+  fi
+  echo "sudo may ask for your Ubuntu user password."
   sudo -v
   sudo apt-get update
   sudo env DEBIAN_FRONTEND=noninteractive \
@@ -625,7 +634,7 @@ install_dependencies() {
 install_dependencies
 
 for command_name in \
-  gcc g++ gfortran make m4 csh perl mpicc mpif90 mpirun \
+  gcc g++ gfortran make m4 csh perl mpicc mpif90 mpirun ompi_info \
   nc-config nf-config ncdump tar gzip sha256sum file ldd nm strings ar \
   readlink stat flock timeout cmp awk tail tr dpkg-query apt-get; do
   command -v "$command_name" >/dev/null \
@@ -643,7 +652,7 @@ fi
 
 gcc --version >"$temp_dir/gcc.version"
 gfortran --version >"$temp_dir/gfortran.version"
-mpirun --version >"$temp_dir/mpirun.version"
+ompi_info --version >"$temp_dir/mpirun.version"
 sed -n '1p' "$temp_dir/gcc.version"
 sed -n '1p' "$temp_dir/gfortran.version"
 sed -n '1p' "$temp_dir/mpirun.version"
@@ -651,9 +660,9 @@ grep -Fqi "Open MPI" "$temp_dir/mpirun.version" \
   || fail "the supported MPI implementation is OpenMPI"
 mpicc --showme:command >"$temp_dir/mpicc.command"
 mpif90 --showme:command >"$temp_dir/mpif90.command"
-grep -Eq '(^|/|[[:space:]])gcc([[:space:]]|$)' "$temp_dir/mpicc.command" \
+grep -Eq '(^|/|[[:space:]])gcc(-[0-9]+)?([[:space:]]|$)' "$temp_dir/mpicc.command" \
   || fail "OpenMPI mpicc is not backed by gcc"
-grep -Eq '(^|/|[[:space:]])gfortran([[:space:]]|$)' \
+grep -Eq '(^|/|[[:space:]])gfortran(-[0-9]+)?([[:space:]]|$)' \
   "$temp_dir/mpif90.command" \
   || fail "OpenMPI mpif90 is not backed by gfortran"
 echo "MPICC_BACKEND:  $(<"$temp_dir/mpicc.command")"
@@ -1061,6 +1070,8 @@ env_assignment_ok() {
   return 1
 }
 
+# Compare literal shell assignments; do not expand variables from the caller.
+# shellcheck disable=SC2016
 environment_file_matches() {
   local file="$1"
   bash -n "$file" || return 1
@@ -1259,6 +1270,12 @@ else
 
   [[ -s "$wrf_dir/configure.wrf" ]] \
     || fail "WRF configure.wrf was not created"
+  # GCC 15 defaults to C23; WRF 4.5.2 still uses pre-C23 declarations.
+  # GCC 14+ also promotes legacy RSL pointer diagnostics to errors.
+  # Apply only to generated GNU configuration, never to upstream source.
+  sed -i -E \
+    '/^(SCC|CCOMP|DM_CC)[[:space:]]*=/ s/$/ -std=gnu17 -Wno-error=incompatible-pointer-types/' \
+    "$wrf_dir/configure.wrf"
   grep -Eq -- '-lnetcdff[[:space:]]+-lnetcdf' \
     "$wrf_dir/configure.wrf" \
     || fail "WRF configure omitted NetCDF-C/Fortran libraries"
@@ -1334,6 +1351,14 @@ else
 
   [[ -s "$wps_dir/configure.wps" ]] \
     || fail "WPS configure.wps was not created"
+  # WPS Makefiles pass SCC unquoted to the bundled-library submake.
+  # Keep SCC as gcc, put compatibility switches in CFLAGS, and persist the
+  # NetCDF prefix because later make invocations also need this variable.
+  {
+    printf '\n# Native Ubuntu GNU compatibility settings\n'
+    printf 'NETCDF = %s\n' "$netcdf_prefix"
+    printf 'CFLAGS += -std=gnu17 -Wno-error=incompatible-pointer-types -Wno-error=implicit-int\n'
+  } >>"$wps_dir/configure.wps"
   grep -Fq -- "-DUSE_JPEG2000 -DUSE_PNG" "$wps_dir/configure.wps" \
     || fail "WPS configure omitted GRIB2 PNG/JPEG2000 flags"
   grep -Eq -- '-lnetcdff[[:space:]]+-lnetcdf' "$wps_dir/configure.wps" \
@@ -1386,7 +1411,8 @@ fi
 verify_wps() {
   local executable name rc run_dir startup_summary=""
   local startup_files=()
-  local verification_dir="$verify_dir/wps_startup_$(date +%Y%m%dT%H%M%S)-$$"
+  local verification_dir
+  verification_dir="$verify_dir/wps_startup_$(date +%Y%m%dT%H%M%S)-$$"
   local verification_status="$wps_dir/verification_one_click.status"
   local status_tmp="$verification_status.tmp.$$"
 
@@ -1490,7 +1516,8 @@ verify_wps
 run_wrf_smoke() {
   local smoke_status="$verify_dir/wrf_em_quarter_ss_smoke.status"
   local case_dir="$wrf_dir/test/em_quarter_ss"
-  local run_dir="$verify_dir/em_quarter_ss_run_$(date +%Y%m%dT%H%M%S)-$$"
+  local run_dir
+  run_dir="$verify_dir/em_quarter_ss_run_$(date +%Y%m%dT%H%M%S)-$$"
   local smoke_log="$run_dir/smoke.log"
   local entry entry_name wrfout_file
   local final_wrfout=""

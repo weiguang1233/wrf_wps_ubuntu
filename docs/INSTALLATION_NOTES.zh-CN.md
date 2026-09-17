@@ -1,5 +1,8 @@
 # WRF 4.5.2 / WPS 4.5 在 WSL2 中的安装与验证记录
 
+> **历史记录**：本文描述旧 WSL 安装，不是当前安装指南。当前目标为原生 Ubuntu x86_64，
+> 请遵循 [README](../README.md) 和 [原生验证记录](NATIVE_UBUNTU_VALIDATION.zh-CN.md)。
+
 记录日期：2026-07-27（Asia/Shanghai）
 
 > 本文保留第一次在 `/home/lwg/wrfv452` 中实际安装和排错的完整记录。
