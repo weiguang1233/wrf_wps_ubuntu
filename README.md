@@ -64,7 +64,11 @@ command -v wrf.exe geogrid.exe ungrib.exe metgrid.exe
 详见 [4.8.0 验证记录](docs/WRF_4.8_VALIDATION.zh-CN.md)。
 旧版完整实测见 [4.5.2 验证记录](docs/NATIVE_UBUNTU_VALIDATION.zh-CN.md)，
 本轮另确认旧兼容入口仍能复用原安装。
-AMD 硬件及其他 Ubuntu 版本尚未做完整实测。
+2026-09-18 另在 AMD Ryzen 9 9950X / Ubuntu 26.04.1 上完成预解压源码的
+WRF 4.5.2 / WPS 4.5 与 WRF 4.7.1 / WPS 4.7.0 编译、链接检查及双进程 60 分钟理想化积分。
+参数差异与验证摘要见 [Ubuntu 26.04 / AMD 本地编译经验](docs/UBUNTU_26_AMD_BUILD_EXPERIENCE.zh-CN.md)。
+上述 4.7.1 为本地源码实测，安装器可选版本仍以 `versions.tsv` 为准。
+其他 Ubuntu 版本尚未做完整实测。
 WSL 不再作为安装目标，脚本检测到 WSL 后会停止。
 旧 WSL2 / Ubuntu 20.04 验证记录保留在历史文档中，不代表本轮原生验证。
 
@@ -233,7 +237,8 @@ WRF 4.5.2 的旧 C 函数声明不兼容 GCC 15 默认的 C23，因此安装器�
 WRF/WPS GNU 配置中显式使用 `-std=gnu17`，并通过
 `-Wno-error=incompatible-pointer-types` 兼容旧通信代码（GCC 14 起将该诊断
 提升为错误）。这不涉及 Intel/AMD 专用指令，也不改动上游源码。
-WPS 还使用 `-Wno-error=implicit-int` 兼容旧式 C 返回类型声明。
+WPS 4.5 还使用 `-Wno-error=implicit-int` 兼容旧式 C 返回类型声明；
+WPS 4.7.0 本地实测仅需 `-std=gnu17`。
 WPS 的 C 选项放入 `CFLAGS`，保持 `SCC=gcc`，以适配上游子 make 的参数传递；
 NetCDF 路径明确写入生成配置，后续直接运行 WPS `./compile` 也能找到系统库。
 Fortran 兼容选项仍由上游配置脚本按 GFortran 版本生成。
@@ -333,3 +338,4 @@ CI 不下载源码，也不执行耗时的完整编译。完整构建是否成�
 - [WPS 官方 Releases](https://github.com/wrf-model/WPS/releases)
 - [WRF 用户指南](https://www2.mmm.ucar.edu/wrf/users/docs/user_guide_v4/contents.html)
 - [GitHub 源码压缩包稳定性说明](https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives)
+
