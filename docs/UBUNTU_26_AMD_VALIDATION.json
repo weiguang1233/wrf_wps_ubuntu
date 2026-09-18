@@ -1,0 +1,264 @@
+{
+  "validation_date": "2026-09-18",
+  "platform": {
+    "os": "Ubuntu 26.04.1 LTS",
+    "architecture": "x86_64",
+    "cpu": "AMD Ryzen 9 9950X",
+    "cpu_cores": 16,
+    "cpu_threads": 32,
+    "memory_gib_approx": 120
+  },
+  "toolchain": {
+    "gcc": "15.2.0",
+    "gfortran": "15.2.0",
+    "openmpi": "5.0.10",
+    "netcdf_c": "4.9.3",
+    "netcdf_fortran": "4.6.2"
+  },
+  "build": {
+    "wrf_mode": "GNU dmpar, basic nesting",
+    "wps_mode": "GNU serial, internal GRIB2",
+    "jobs": 16,
+    "cpu_specific_flags_added": false,
+    "system_packages_installed_by_build_agent": false
+  },
+  "scope": {
+    "pre_extracted_local_sources": true,
+    "installer_version_manifest_modified": false,
+    "real_data_pipeline_tested": false,
+    "research_benchmark_comparison_performed": false,
+    "moving_nest_enabled": false
+  },
+  "versions": [
+    {
+      "wrf": "4.5.2",
+      "wps": "4.5",
+      "status": "PASS",
+      "wrf_c_flags": "-std=gnu17 -Wno-error=incompatible-pointer-types",
+      "wps_c_flags": "-std=gnu17 -Wno-error=implicit-int",
+      "checks": {
+        "toolchain_c_fortran_mpi_netcdf4": "PASS",
+        "executables_elf_ldd": "PASS",
+        "wps_startup_expected_missing_inputs": "PASS",
+        "ideal_initialization": "PASS",
+        "mpi_ranks": 2,
+        "simulation_minutes": 60,
+        "history_times": [
+          "0001-01-01_00:00:00",
+          "0001-01-01_00:30:00",
+          "0001-01-01_01:00:00"
+        ],
+        "finite_fields": [
+          "T",
+          "QVAPOR",
+          "U",
+          "V",
+          "W",
+          "PH"
+        ],
+        "installed_wrf_unchanged": true,
+        "smoke_wrf_identical": true
+      },
+      "artifacts": [
+        {
+          "program": "WRF/wrf.exe",
+          "bytes": 57091520,
+          "sha256": "9b34caec56ce8255f03190842abc99dd25e3e85345ab4fd897c0824fecd6a927"
+        },
+        {
+          "program": "WRF/real.exe",
+          "bytes": 47611984,
+          "sha256": "cfa25e447dac39aef99f0f0d20715cecf1a02e579f736b3625d1278179923ba8"
+        },
+        {
+          "program": "WRF/ndown.exe",
+          "bytes": 47509544,
+          "sha256": "fc05b33d4c04b0040f579b8f085887c6e6a17d863a44a307bd696735006a2a53"
+        },
+        {
+          "program": "WRF/tc.exe",
+          "bytes": 46809344,
+          "sha256": "d2f20829dc3278c6b3c253541d7f14b0d71aade8760dcecbb8d898a96756f64f"
+        },
+        {
+          "program": "WPS/geogrid.exe",
+          "bytes": 857280,
+          "sha256": "d7381c43f178c6c92c234742366c283007933ca5844bb7b6681ff8833c31781d"
+        },
+        {
+          "program": "WPS/ungrib.exe",
+          "bytes": 2489712,
+          "sha256": "7ef7d3c3c713b39404e7df1a9b8c98a703bb5c5a7102ae981912e3fa3b8a89de"
+        },
+        {
+          "program": "WPS/metgrid.exe",
+          "bytes": 909024,
+          "sha256": "a653a8a05ff99c073f3a729c6e59bcef555e532b61239b2186737e46d2488a79"
+        },
+        {
+          "program": "WPS/avg_tsfc.exe",
+          "bytes": 95696,
+          "sha256": "1aa1a59a476f2423a3caba72221d39d121273458dab0de9edc0b01bb8799b40d"
+        },
+        {
+          "program": "WPS/calc_ecmwf_p.exe",
+          "bytes": 112856,
+          "sha256": "1f49e05cd14c7468663a73c46cf3d8e2a20dd5c2e8839fac4b9872428a829783"
+        },
+        {
+          "program": "WPS/height_ukmo.exe",
+          "bytes": 99800,
+          "sha256": "341f7fee0638f07bcba8df51264f6e56bb2fff2352da1d48806c3b577924d431"
+        },
+        {
+          "program": "WPS/int2nc.exe",
+          "bytes": 52624,
+          "sha256": "8dcd91e6723401225cd297255eaca34e28cbfdebdbbc13d32b1f733d04fc6494"
+        },
+        {
+          "program": "WPS/mod_levs.exe",
+          "bytes": 61152,
+          "sha256": "ca9db10545f05ed7e304de220ac9f6b49b1d71a85ff2702afef35e26ce3814f6"
+        },
+        {
+          "program": "WPS/rd_intermediate.exe",
+          "bytes": 52312,
+          "sha256": "c9ea44b6b7634bc7e73cb5479945e28fcdb6f503a076aa7e5dc151b6fc83e767"
+        },
+        {
+          "program": "WPS/g1print.exe",
+          "bytes": 109872,
+          "sha256": "8ac8a11c4bcb4abc43a2f5cfb33dbb69a6eea81ad316a1b7a2e16c031ce555c4"
+        },
+        {
+          "program": "WPS/g2print.exe",
+          "bytes": 2213120,
+          "sha256": "51cf79a1993fb6895ca91e6ff6b89868674b95c8f756baec5d8b08b8b29bd797"
+        }
+      ]
+    },
+    {
+      "wrf": "4.7.1",
+      "wps": "4.7.0",
+      "status": "PASS",
+      "wrf_c_flags": "-std=gnu17 -Wno-error=incompatible-pointer-types",
+      "wps_c_flags": "-std=gnu17",
+      "checks": {
+        "toolchain_c_fortran_mpi_netcdf4": "PASS",
+        "executables_elf_ldd": "PASS",
+        "wps_startup_expected_missing_inputs": "PASS",
+        "ideal_initialization": "PASS",
+        "mpi_ranks": 2,
+        "simulation_minutes": 60,
+        "history_times": [
+          "0001-01-01_00:00:00",
+          "0001-01-01_00:30:00",
+          "0001-01-01_01:00:00"
+        ],
+        "finite_fields": [
+          "T",
+          "QVAPOR",
+          "U",
+          "V",
+          "W",
+          "PH"
+        ],
+        "installed_wrf_unchanged": true,
+        "smoke_wrf_identical": true
+      },
+      "artifacts": [
+        {
+          "program": "WRF/wrf.exe",
+          "bytes": 54859192,
+          "sha256": "2ca9b83c3e0b81dbf9e2fcd8a0ad80340cca5acec35a2d42e52b8257139e1bda"
+        },
+        {
+          "program": "WRF/real.exe",
+          "bytes": 40133984,
+          "sha256": "22d52ab815d3a352faa7320b4a1580d72f543aaba03830576a2ac0e20ffcddf4"
+        },
+        {
+          "program": "WRF/ndown.exe",
+          "bytes": 43766744,
+          "sha256": "dc152bd6aad3577c497d7bd765af1b2ec8e0c9b760c8332468a332400ed555bc"
+        },
+        {
+          "program": "WRF/tc.exe",
+          "bytes": 39339536,
+          "sha256": "05ab825dab9e8d0200cd253af8cfa8b8b651dcf133c095c00c3e1d737343708a"
+        },
+        {
+          "program": "WPS/geogrid.exe",
+          "bytes": 857280,
+          "sha256": "bec04ef1f42c017c56f6ef8ac177e296d232f71ae2e3e5dbf2ba58f506a4a5b4"
+        },
+        {
+          "program": "WPS/ungrib.exe",
+          "bytes": 2490168,
+          "sha256": "38b27d0b07a184b5bf221571870fcd2d998f33c57fbcf25dcc22550ca4c5de7d"
+        },
+        {
+          "program": "WPS/metgrid.exe",
+          "bytes": 909024,
+          "sha256": "4c1b41d244a956ab0778925d395e6d50dfca0d62d6480c35563057a096205bfd"
+        },
+        {
+          "program": "WPS/avg_tsfc.exe",
+          "bytes": 95696,
+          "sha256": "1aa1a59a476f2423a3caba72221d39d121273458dab0de9edc0b01bb8799b40d"
+        },
+        {
+          "program": "WPS/calc_ecmwf_p.exe",
+          "bytes": 112856,
+          "sha256": "1f49e05cd14c7468663a73c46cf3d8e2a20dd5c2e8839fac4b9872428a829783"
+        },
+        {
+          "program": "WPS/height_ukmo.exe",
+          "bytes": 99800,
+          "sha256": "341f7fee0638f07bcba8df51264f6e56bb2fff2352da1d48806c3b577924d431"
+        },
+        {
+          "program": "WPS/int2nc.exe",
+          "bytes": 52624,
+          "sha256": "8dcd91e6723401225cd297255eaca34e28cbfdebdbbc13d32b1f733d04fc6494"
+        },
+        {
+          "program": "WPS/mod_levs.exe",
+          "bytes": 61152,
+          "sha256": "ca9db10545f05ed7e304de220ac9f6b49b1d71a85ff2702afef35e26ce3814f6"
+        },
+        {
+          "program": "WPS/rd_intermediate.exe",
+          "bytes": 52312,
+          "sha256": "c9ea44b6b7634bc7e73cb5479945e28fcdb6f503a076aa7e5dc151b6fc83e767"
+        },
+        {
+          "program": "WPS/g1print.exe",
+          "bytes": 109872,
+          "sha256": "8ac8a11c4bcb4abc43a2f5cfb33dbb69a6eea81ad316a1b7a2e16c031ce555c4"
+        },
+        {
+          "program": "WPS/g2print.exe",
+          "bytes": 2213576,
+          "sha256": "affa37364b90f6257e80bc5103c624191b7e4336466c2a24606f38b5f499df43"
+        }
+      ],
+      "source_provenance": [
+        {
+          "archive": "v4.7.1.tar.gz",
+          "archive_sha256": "11186188b033d26332e31769c1f7aff9349406920a7f72eeb256d5881f7223f4",
+          "local_files_checked": 5008,
+          "mismatches": [],
+          "claim": "Local extracted files compared with user-provided archive; no independent upstream WRF archive hash verified."
+        },
+        {
+          "archive": "WPS-4.7.0.tar.gz",
+          "archive_sha256": "5232d20d7556338391b66aba45824d4fcd6c42712ebe9325f359f3c6cf043808",
+          "local_files_checked": 1402,
+          "mismatches": [],
+          "claim": "Local extracted files compared with user-provided archive; no independent upstream WRF archive hash verified."
+        }
+      ]
+    }
+  ]
+}
